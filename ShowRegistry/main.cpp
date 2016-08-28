@@ -10,12 +10,12 @@ private:
 	HKEY key;
 	DWORD dwByte;
 	std::string get_last_error();
-	std::string buf;
+	std::wstring buf;
 public:
 	RegistryRead(HKEY parent_key_handle, const TCHAR* sub_key_root);
 	DWORD dwType;
 	void read(const TCHAR* key_name);
-	std::string get_data();
+	std::wstring& get_data();
 };
 
 RegistryRead::RegistryRead(HKEY parent_key_handle, const TCHAR* sub_key_root)
@@ -46,53 +46,24 @@ std::string RegistryRead::get_last_error() {
 }
 
 void RegistryRead::read(const TCHAR* key_name) {
-	auto p = RegQueryValueEx(this->key, key_name, 0, &this->dwType, NULL, &this->dwByte);
+	auto p = RegQueryValueEx(this->key, key_name, 0, &this->dwType, nullptr, &this->dwByte);
 	if (p != ERROR_SUCCESS)
 		throw std::runtime_error(this->get_last_error());
 	buf.resize(this->dwByte);
-	RegQueryValueEx(this->key, key_name, 0, &this->dwType, (LPBYTE)&this->buf[0], &this->dwByte);
-}
-std::wstring shift_jis_to_utf_16(const std::string& str)
-{
-	static_assert(sizeof(wchar_t) == 2, "this function is windows only");
-	const int len = ::MultiByteToWideChar(CP_ACP, 0, str.c_str(), -1, nullptr, 0);
-	std::wstring re(len * 2 + 2, L'\0');
-	if (!::MultiByteToWideChar(CP_ACP, 0, str.c_str(), -1, &re[0], len)) {
-		const auto ec = ::GetLastError();
-		switch (ec)
-		{
-			case ERROR_INSUFFICIENT_BUFFER:
-				throw std::runtime_error("in function utf_16_to_shift_jis, WideCharToMultiByte fail. cause: ERROR_INSUFFICIENT_BUFFER"); break;
-			case ERROR_INVALID_FLAGS:
-				throw std::runtime_error("in function utf_16_to_shift_jis, WideCharToMultiByte fail. cause: ERROR_INVALID_FLAGS"); break;
-			case ERROR_INVALID_PARAMETER:
-				throw std::runtime_error("in function utf_16_to_shift_jis, WideCharToMultiByte fail. cause: ERROR_INVALID_PARAMETER"); break;
-			case ERROR_NO_UNICODE_TRANSLATION:
-				throw std::runtime_error("in function utf_16_to_shift_jis, WideCharToMultiByte fail. cause: ERROR_NO_UNICODE_TRANSLATION"); break;
-			default:
-				throw std::runtime_error("in function utf_16_to_shift_jis, WideCharToMultiByte fail. cause: unknown(" + std::to_string(ec) + ')'); break;
-		}
-	}
-	const std::size_t real_len = std::wcslen(re.c_str());
-	re.resize(real_len);
-	re.shrink_to_fit();
-	return re;
-}
-std::string SJIStoUTF8(const std::string& str) {
-	std::wstring_convert<std::codecvt_utf8<wchar_t>> cvt;
-	return cvt.to_bytes(shift_jis_to_utf_16(str));
+	RegQueryValueEx(this->key, key_name, 0, nullptr, (LPBYTE)&this->buf[0], &this->dwByte);
+	buf.resize(std::wcslen(buf.c_str()));
 }
 
-std::string RegistryRead::get_data() {
-
-	return SJIStoUTF8(this->buf.c_str());
+std::wstring& RegistryRead::get_data() {
+	return this->buf;
 }
 
 int main() {
 	try {
+		std::wcout.imbue(std::locale(""));
 		RegistryRead reg(HKEY_CURRENT_USER, _T("Control Panel\\Mouse"));
 		reg.read(TEXT("DoubleClickSpeed"));
-		if (reg.dwType == REG_SZ) std::cout << reg.get_data() << std::endl;
+		if (reg.dwType == REG_SZ) std::wcout << reg.get_data() << std::endl;
 		return 0;
 	}
 	catch (std::exception &er) {
