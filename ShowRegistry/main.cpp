@@ -1,7 +1,9 @@
-#include <Windows.h>
+ï»¿#include <Windows.h>
 #include <iostream>
 #include <string>
+#include <cstring>
 #include <codecvt>
+#include <tchar.h>
 
 class RegistryRead {
 private:
@@ -36,10 +38,10 @@ std::string RegistryRead::get_last_error() {
 		nullptr
 	);
 	auto i = len - 3;
-	for (; '\r' != buf[i] && '\n' != buf[i] && '\0' != buf[i]; i++);//‰üs•¶Žšíœ
+	for (; '\r' != buf[i] && '\n' != buf[i] && '\0' != buf[i]; i++);//æ”¹è¡Œæ–‡å­—å‰Šé™¤
 	buf[i] = '\0';
-	std::string ret = buf + ("(" + std::to_string(lasterr)) + ")";//ƒGƒ‰[ƒƒbƒZ[ƒWì¬
-	LocalFree(buf);//FormatMessageA‚ÅFORMAT_MESSAGE_ALLOCATE_BUFFER‚ðŽw’è‚µ‚½‚Ì‚Å•K‚¸ŠJ•ú
+	std::string ret = buf + ("(" + std::to_string(lasterr)) + ")";//ã‚¨ãƒ©ãƒ¼ãƒ¡ãƒƒã‚»ãƒ¼ã‚¸ä½œæˆ
+	LocalFree(buf);//FormatMessageAã§FORMAT_MESSAGE_ALLOCATE_BUFFERã‚’æŒ‡å®šã—ãŸã®ã§å¿…ãšé–‹æ”¾
 	return ret;
 }
 
@@ -50,24 +52,35 @@ void RegistryRead::read(const TCHAR* key_name) {
 	buf.resize(this->dwByte);
 	RegQueryValueEx(this->key, key_name, 0, &this->dwType, (LPBYTE)&this->buf[0], &this->dwByte);
 }
-
-std::string SJIStoUTF8(const char* szShiftJis) {
-	wchar_t bufUnicode[MAX_PATH];
-	char bufUTF8[MAX_PATH];
-	int iLenUnicode = MultiByteToWideChar(CP_ACP, 0, szShiftJis, strlen(szShiftJis) + 1,
-		NULL, 0);
-	if (iLenUnicode <= sizeof(bufUnicode) / sizeof(bufUnicode[0])) {
-		MultiByteToWideChar(CP_ACP, 0, szShiftJis, strlen(szShiftJis) + 1, bufUnicode, MAX_PATH);
-		// ŽŸ‚ÉAUniocde‚©‚çUTF8‚É•ÏŠ·‚·‚é
-		// ƒTƒCƒY‚ðŒvŽZ‚·‚é
-		int iLenUtf8 = WideCharToMultiByte(CP_UTF8, 0, bufUnicode, iLenUnicode, NULL, 0,
-			NULL, NULL);
-		if (iLenUtf8 <= sizeof(bufUTF8)) {
-			WideCharToMultiByte(CP_UTF8, 0, bufUnicode, iLenUnicode, bufUTF8, sizeof(bufUTF8),
-				NULL, NULL);
+std::wstring shift_jis_to_utf_16(const std::string& str)
+{
+	static_assert(sizeof(wchar_t) == 2, "this function is windows only");
+	const int len = ::MultiByteToWideChar(CP_ACP, 0, str.c_str(), -1, nullptr, 0);
+	std::wstring re(len * 2 + 2, L'\0');
+	if (!::MultiByteToWideChar(CP_ACP, 0, str.c_str(), -1, &re[0], len)) {
+		const auto ec = ::GetLastError();
+		switch (ec)
+		{
+			case ERROR_INSUFFICIENT_BUFFER:
+				throw std::runtime_error("in function utf_16_to_shift_jis, WideCharToMultiByte fail. cause: ERROR_INSUFFICIENT_BUFFER"); break;
+			case ERROR_INVALID_FLAGS:
+				throw std::runtime_error("in function utf_16_to_shift_jis, WideCharToMultiByte fail. cause: ERROR_INVALID_FLAGS"); break;
+			case ERROR_INVALID_PARAMETER:
+				throw std::runtime_error("in function utf_16_to_shift_jis, WideCharToMultiByte fail. cause: ERROR_INVALID_PARAMETER"); break;
+			case ERROR_NO_UNICODE_TRANSLATION:
+				throw std::runtime_error("in function utf_16_to_shift_jis, WideCharToMultiByte fail. cause: ERROR_NO_UNICODE_TRANSLATION"); break;
+			default:
+				throw std::runtime_error("in function utf_16_to_shift_jis, WideCharToMultiByte fail. cause: unknown(" + std::to_string(ec) + ')'); break;
 		}
 	}
-	return bufUTF8;
+	const std::size_t real_len = std::wcslen(re.c_str());
+	re.resize(real_len);
+	re.shrink_to_fit();
+	return re;
+}
+std::string SJIStoUTF8(const std::string& str) {
+	std::wstring_convert<std::codecvt_utf8<wchar_t>> cvt;
+	return cvt.to_bytes(shift_jis_to_utf_16(str));
 }
 
 std::string RegistryRead::get_data() {
@@ -77,7 +90,7 @@ std::string RegistryRead::get_data() {
 
 int main() {
 	try {
-		RegistryRead reg(HKEY_CURRENT_USER, TEXT("\"Control Panel\\Mouse\""));
+		RegistryRead reg(HKEY_CURRENT_USER, _T("Control Panel\\Mouse\""));
 		reg.read(TEXT("DoubleClickSpeed"));
 		if (reg.dwType == REG_SZ) std::cout << reg.get_data() << std::endl;
 		return 0;
