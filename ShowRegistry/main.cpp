@@ -90,7 +90,7 @@ std::string RegistryRead::get_data() {
 
 int main() {
 	try {
-		RegistryRead reg(HKEY_CURRENT_USER, _T("Control Panel\\Mouse\""));
+		RegistryRead reg(HKEY_CURRENT_USER, _T("Control Panel\\Mouse"));
 		reg.read(TEXT("DoubleClickSpeed"));
 		if (reg.dwType == REG_SZ) std::cout << reg.get_data() << std::endl;
 		return 0;
