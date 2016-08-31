@@ -300,3 +300,4 @@ Temporary Items
 #other
 *.diagsession
 *cd
+tmp/
