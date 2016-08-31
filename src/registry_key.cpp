@@ -105,8 +105,7 @@ namespace win32 {
 #endif
 		const auto er = RegOpenKeyEx(parent_key_handle, sub_key_root, 0, static_cast<std::uint32_t>(rights) | static_cast<std::uint32_t>(view), &this->key);
 		if (ERROR_SUCCESS != er) {
-			const auto ec = GetLastError();
-			throw system_error(std::error_code(ec, system_category()), "RegOpenKeyEx:(" + std::to_string(er) + ") GetLastError:(" + std::to_string(ec) + ')');
+			throw system_error(std::error_code(er, system_category()), "RegOpenKeyEx:(" + std::to_string(er) + ')');
 		}
 		this->is_open_ = true;
 	}
@@ -125,9 +124,9 @@ namespace win32 {
 	{
 		this->check_open();
 		std::pair<registry_value_kind, DWORD> re;
-		if (ERROR_SUCCESS != RegQueryValueEx(this->key, key_name, 0, reinterpret_cast<DWORD*>(&re.first), nullptr, &re.second)) {
-			const auto ec = GetLastError();
-			throw system_error(std::error_code(ec, system_category()), '(' + std::to_string(ec) + ')');
+		const auto er = RegQueryValueEx(this->key, key_name, 0, reinterpret_cast<DWORD*>(&re.first), nullptr, &re.second);
+		if (ERROR_SUCCESS != er) {
+			throw system_error(std::error_code(er, system_category()), '(' + std::to_string(er) + ')');
 		}
 		return re;
 	}
@@ -147,8 +146,7 @@ namespace win32 {
 			re.resize(old_size);
 			const auto er = RegQueryValueEx(this->key, key_name, 0, nullptr, reinterpret_cast<LPBYTE>(&re[0]), &new_size);
 			if (ERROR_SUCCESS != er && ERROR_MORE_DATA != er) {
-				const auto ec = GetLastError();
-				throw system_error(std::error_code(ec, system_category()), '(' + std::to_string(ec) + ')');
+				throw system_error(std::error_code(er, system_category()), '(' + std::to_string(er) + ')');
 			}
 		} while (old_size != new_size);
 		return re;
@@ -164,8 +162,7 @@ namespace win32 {
 			re.resize(old_size);
 			const auto er = RegQueryValueEx(this->key, key_name, 0, nullptr, reinterpret_cast<LPBYTE>(&re[0]), &new_size);
 			if (ERROR_SUCCESS != er && ERROR_MORE_DATA != er) {
-				const auto ec = GetLastError();
-				throw system_error(std::error_code(ec, system_category()), '(' + std::to_string(ec) + ')');
+				throw system_error(std::error_code(er, system_category()), '(' + std::to_string(er) + ')');
 			}
 		} while (old_size != new_size);
 		return re;
@@ -185,8 +182,7 @@ namespace win32 {
 			//得られるのはNULL文字区切りのbyte列
 			const auto er = RegQueryValueEx(this->key, key_name, 0, nullptr, reinterpret_cast<LPBYTE>(buf_p), &new_size);
 			if (ERROR_SUCCESS != er && ERROR_MORE_DATA != er) {
-				const auto ec = GetLastError();
-				throw system_error(std::error_code(ec, system_category()), '(' + std::to_string(ec) + ')');
+				throw system_error(std::error_code(er, system_category()), '(' + std::to_string(er) + ')');
 			}
 		} while (old_size != new_size);
 		using string_traits_type = std::basic_string<TCHAR>::traits_type;
@@ -205,9 +201,9 @@ namespace win32 {
 		/*const*/ auto kind_and_size = get_value_kind_and_size(key_name);
 		if (dwType != static_cast<DWORD>(kind_and_size.first)) throw std::runtime_error("specified key type is not corrent.");
 		std::uint32_t re;
-		if (ERROR_SUCCESS != RegQueryValueEx(this->key, key_name, 0, nullptr, reinterpret_cast<LPBYTE>(&re), &kind_and_size.second)) {
-			const auto ec = GetLastError();
-			throw system_error(std::error_code(ec, system_category()), '(' + std::to_string(ec) + ')');
+		const auto er = RegQueryValueEx(this->key, key_name, 0, nullptr, reinterpret_cast<LPBYTE>(&re), &kind_and_size.second);
+		if (ERROR_SUCCESS != er) {
+			throw system_error(std::error_code(er, system_category()), '(' + std::to_string(er) + ')');
 		}
 		if (dwType == REG_DWORD_BIG_ENDIAN) re = ntohl(re);//convert byte order
 		return re;
@@ -217,9 +213,9 @@ namespace win32 {
 		/*const*/ auto kind_and_size = get_value_kind_and_size(key_name);
 		if (registry_value_kind::qword != kind_and_size.first) throw std::runtime_error("specified key type is not corrent.");
 		std::uint64_t re;
-		if (ERROR_SUCCESS != RegQueryValueEx(this->key, key_name, 0, nullptr, reinterpret_cast<LPBYTE>(&re), &kind_and_size.second)) {
-			const auto ec = GetLastError();
-			throw system_error(std::error_code(ec, system_category()), '(' + std::to_string(ec) + ')');
+		const auto er = RegQueryValueEx(this->key, key_name, 0, nullptr, reinterpret_cast<LPBYTE>(&re), &kind_and_size.second);
+		if (ERROR_SUCCESS != er) {
+			throw system_error(std::error_code(er, system_category()), '(' + std::to_string(er) + ')');
 		}
 		return re;
 	}
