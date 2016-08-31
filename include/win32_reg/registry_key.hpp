@@ -5,6 +5,7 @@
 //          static_cast<IUnknown*>(*pp);    // make sure everyone derives from IUnknown
 #define CINTERFACE
 #endif
+#include "config/suffix.hpp"
 #include <Windows.h>
 #include <string>
 #include <cstdint>
@@ -58,7 +59,7 @@ namespace win32 {
 	};
 	static_assert(static_cast<std::uint32_t>(registry_rights::standard_rights_read) == STANDARD_RIGHTS_READ, "registry_rights::standard_rights_read");
 	static_assert(static_cast<std::uint32_t>(registry_rights::standard_rights_write) == STANDARD_RIGHTS_WRITE, "registry_rights::standard_rights_write");
-	inline constexpr registry_rights operator| (registry_rights l, registry_rights r) {
+	inline WIN32_REG_CONSTEXPR registry_rights operator| (registry_rights l, registry_rights r) {
 		return static_cast<registry_rights>(static_cast<std::uint64_t>(l) | static_cast<std::uint64_t>(r));
 	}
 	enum class registry_value_kind : DWORD {
@@ -99,11 +100,11 @@ namespace win32 {
 		registry_key(registry_key&&) = delete;
 		registry_key& operator=(const registry_key&) = delete;
 		registry_key& operator=(registry_key&&) = delete;
-		~registry_key() noexcept;
+		~registry_key() WIN32_REG_NOEXCEPT_OR_NOTHROW;
 		void open(registry_hive parent_key_handle, const TCHAR* sub_key_root, registry_rights rights, registry_view view = registry_view::v_default);
 		void open(HKEY parent_key_handle, const TCHAR* sub_key_root, registry_rights rights, registry_view view = registry_view::v_default);
-		void close() noexcept;
-		bool is_open() const noexcept;
+		void close() WIN32_REG_NOEXCEPT_OR_NOTHROW;
+		bool is_open() const WIN32_REG_NOEXCEPT_OR_NOTHROW;
 		registry_value_kind get_value_kind(const TCHAR* key_name) const;
 
 		template<registry_value_kind type, concept<

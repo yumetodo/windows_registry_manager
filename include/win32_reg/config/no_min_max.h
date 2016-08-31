@@ -5,8 +5,8 @@
   Distributed under the Boost Software License, Version 1.0.
   (See http://www.boost.org/LICENSE_1_0.txt)
 =============================================================================*/
-#ifndef DXLE_INC_CONFIG_NO_MIN_MAX_H_
-#define DXLE_INC_CONFIG_NO_MIN_MAX_H_
+#ifndef WIN32_REG_INC_CONFIG_NO_MIN_MAX_H_
+#define WIN32_REG_INC_CONFIG_NO_MIN_MAX_H_
 
 //Windows.hなどからくる min max マクロがdefineされるのを防ぐ
 
@@ -21,4 +21,4 @@
 #undef min
 #endif
 
-#endif
+#endif //WIN32_REG_INC_CONFIG_NO_MIN_MAX_H_

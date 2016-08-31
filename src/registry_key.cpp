@@ -86,7 +86,7 @@ namespace win32 {
 		this->open(parent_key_handle, sub_key_root, rights, view);
 	}
 
-	registry_key::~registry_key() noexcept {
+	registry_key::~registry_key() WIN32_REG_NOEXCEPT_OR_NOTHROW {
 		this->close();
 	}
 
@@ -111,7 +111,7 @@ namespace win32 {
 		this->is_open_ = true;
 	}
 
-	void registry_key::close() noexcept
+	void registry_key::close() WIN32_REG_NOEXCEPT_OR_NOTHROW
 	{
 		if (is_open_) {
 			RegCloseKey(this->key);
@@ -119,7 +119,7 @@ namespace win32 {
 		}
 	}
 
-	bool registry_key::is_open() const noexcept { return this->is_open_; }
+	bool registry_key::is_open() const WIN32_REG_NOEXCEPT_OR_NOTHROW { return this->is_open_; }
 
 	std::pair<registry_value_kind, DWORD> registry_key::get_value_kind_and_size(const TCHAR * key_name) const
 	{
@@ -189,7 +189,7 @@ namespace win32 {
 				throw system_error(std::error_code(ec, system_category()), '(' + std::to_string(ec) + ')');
 			}
 		} while (old_size != new_size);
-		using string_traits_type = typename std::basic_string<TCHAR>::traits_type;
+		using string_traits_type = std::basic_string<TCHAR>::traits_type;
 		for (
 			std::size_t i = string_traits_type::length(buf_p) + 1, l = string_traits_type::length(buf_p + i);//一つ目はすっ飛ばす
 			0 < l; 
