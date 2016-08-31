@@ -29,7 +29,7 @@ namespace win32 {
 		auto i = (len < 3) ? 0 : len - 3;
 		for (; '\r' != buf[i] && '\n' != buf[i] && '\0' != buf[i]; i++);//改行文字削除
 		buf[i] = '\0';
-		std::string ret = buf + ("(" + std::to_string(lasterr)) + ")";//エラーメッセージ作成
+		std::string ret = buf;//エラーメッセージ作成
 		LocalFree(buf);//FormatMessageAでFORMAT_MESSAGE_ALLOCATE_BUFFERを指定したので必ず開放
 		return ret;
 	}
