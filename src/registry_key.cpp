@@ -151,13 +151,24 @@ namespace win32 {
 				static_cast<time_t>(((static_cast<std::uint64_t>(ft.dwHighDateTime) << 32) + ft.dwLowDateTime - 116444736000000000) / 10000000)
 			);
 		}
-		struct sub_key_info { DWORD num; DWORD max_len; };
-		WIN32_REG_CONSTEXPR bool operator!=(const sub_key_info& l, const sub_key_info& r) { return l.max_len != r.max_len || r.num != l.num; }
-		sub_key_info get_sub_key_info(HKEY key) {
-			sub_key_info re;
-			LONG er = RegQueryInfoKey(
-				key, nullptr, nullptr, nullptr, &re.num, &re.max_len, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr
+		enum class info_type { sub_key, key_value };
+		template<info_type i> struct reg_key_info { DWORD num; DWORD max_len; };
+		template<info_type i>
+		WIN32_REG_CONSTEXPR bool operator!=(const reg_key_info<i>& l, const reg_key_info<i>& r) { return l.max_len != r.max_len || r.num != l.num; }
+		template<info_type i> LONG reg_query_info_key(HKEY key, reg_key_info<i>& sub_key);
+		template<> LONG reg_query_info_key<info_type::key_value>(HKEY key, reg_key_info<info_type::key_value>& info) {
+			return RegQueryInfoKey(
+				key, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, &info.num, &info.max_len, nullptr, nullptr, nullptr
 			);
+		}
+		template<> LONG reg_query_info_key<info_type::sub_key>(HKEY key, reg_key_info<info_type::sub_key>& info) {
+			return RegQueryInfoKey(
+				key, nullptr, nullptr, nullptr, &info.num, &info.max_len, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr
+			);
+		}
+		template<info_type i> reg_key_info<i> get_sub_key_info(HKEY key) {
+			reg_key_info<i> re;
+			const auto er = reg_query_info_key(key, re);
 			if (ERROR_SUCCESS != er) throw system_error(std::error_code(er, system_category()), '(' + std::to_string(er) + ')');
 			++re.max_len;//終端のNULLは含まれないことがある
 			return re;
@@ -184,9 +195,9 @@ namespace win32 {
 		std::unordered_map<tstring, std::chrono::system_clock::time_point> re;
 		bool force_retry = false;
 		for (
-			detail::sub_key_info info = detail::get_sub_key_info(this->key), info_old = {}; 
+			detail::reg_key_info<detail::info_type::sub_key> info = detail::get_sub_key_info<detail::info_type::sub_key>(this->key), info_old = {};
 			info_old != info || force_retry;
-			info_old = info, info = detail::get_sub_key_info(this->key)
+			info_old = info, info = detail::get_sub_key_info<detail::info_type::sub_key>(this->key)
 		) {
 			if (!info.num) return{};
 			force_retry = false;
@@ -212,9 +223,9 @@ namespace win32 {
 		std::vector<tstring> re;
 		bool force_retry = false;
 		for (
-			detail::sub_key_info info = detail::get_sub_key_info(this->key), info_old = {};
+			detail::reg_key_info<detail::info_type::sub_key> info = detail::get_sub_key_info<detail::info_type::sub_key>(this->key), info_old = {};
 			info_old != info || force_retry;
-			info_old = info, info = detail::get_sub_key_info(this->key)
+			info_old = info, info = detail::get_sub_key_info<detail::info_type::sub_key>(this->key)
 		) {
 			if (!info.num) return{};
 			force_retry = false;
@@ -233,10 +244,41 @@ namespace win32 {
 		}
 		return re;
 	}
-
 	std::vector<tstring> win32::registry_key::get_value_names()
 	{
-		return std::vector<tstring>();
+		this->check_open();
+		std::vector<tstring> re;
+		bool force_retry = false;
+		for (
+			detail::reg_key_info<detail::info_type::key_value> info = detail::get_sub_key_info<detail::info_type::key_value>(this->key), info_old = {};
+			info_old != info || force_retry;
+			info_old = info, info = detail::get_sub_key_info<detail::info_type::key_value>(this->key)
+		) {
+			if (!info.num) return{};
+			force_retry = false;
+			re.reserve(info.num);
+			LONG er = ERROR_SUCCESS;
+			for (DWORD i = 0; er != ERROR_NO_MORE_ITEMS; ++i) {
+				tstring buf;
+				buf.resize(info.max_len);
+				DWORD len = info.max_len;
+				er = RegEnumValue(this->key, i, &buf[0], &len, nullptr, nullptr, nullptr, nullptr);
+				if (ERROR_MORE_DATA == er) {
+					re.clear();
+					force_retry = true;
+					break;
+				}
+				else if (ERROR_SUCCESS == er) {
+					buf.resize(len);
+					buf.shrink_to_fit();
+					re.push_back(std::move(buf));
+				}
+				else if (ERROR_NO_MORE_ITEMS != er) {
+					throw system_error(std::error_code(er, system_category()), '(' + std::to_string(er) + ')');
+				}
+			}
+		}
+		return re;
 	}
 
 	std::vector<std::uint8_t> registry_key::get_value_as_binary(const TCHAR * key_name)
