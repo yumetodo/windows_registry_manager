@@ -105,6 +105,9 @@ int main() {
 			_T(R"(Software\Microsoft\Windows\CurrentVersion\Explorer)"),
 			win32::registry_rights::read_key
 		);
+#ifdef UNICODE
+		std::wcout.imbue(std::locale(""));
+#endif
 		for (auto&& s : reg.get_sub_key_names()) {
 #ifdef UNICODE
 			std::wcout.imbue(std::locale(""));
@@ -114,20 +117,29 @@ int main() {
 #endif
 				<< s << std::endl;
 		}
+		win32::registry_key reg2(reg, _T("User Shell Folders"), win32::registry_rights::read_key);
 #ifdef UNICODE
 		std::wcout
 #else
 		std::cout
 #endif
-			<< win32::registry_key(reg, _T("User Shell Folders"), win32::registry_rights::read_key)
-			.get_value<win32::registry_value_kind::expand_string>(_T("Personal"))
-			<< std::endl;
+			<< reg2.get_value<win32::registry_value_kind::expand_string>(_T("Personal")) << std::endl << std::endl;
+		for (auto&& s : reg.get_value_names()) {
+#ifdef UNICODE
+			std::wcout.imbue(std::locale(""));
+			std::wcout
+#else
+			std::cout
+#endif
+				<< s << std::endl;
+		}
 		reg.close();
 #ifdef UNICODE
 		std::wcout
 #else
 		std::cout
 #endif
+			<< std::endl
 			<< _T("ie version:") << GetIeVersion() << std::endl
 			<< _T("IsDotNet2:") << IsDotNet2() << std::endl
 			<< _T("IsDotNet4:") << IsDotNet4() << std::endl;
