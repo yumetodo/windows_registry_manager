@@ -14,7 +14,7 @@
 #include <codecvt>
 
 namespace win32 {
-#if defined(_MSC_VER) && _MSC_VER < 1800
+#if defined(_MSC_VER) && _MSC_VER < 1900
 	std::string format_message(DWORD lasterr) {
 		char* buf = nullptr;
 		const auto len = FormatMessageA(
@@ -62,7 +62,7 @@ namespace win32 {
 	{
 	public:
 		system_error(std::error_code ec, const std::string& m)
-			: ec_(ec), runtime_error((!m.empty()) ? ec.message() : m + ": " + ec.message())
+			: ec_(ec), runtime_error((m.empty()) ? ec.message() : m + ": " + ec.message())
 		{}
 		system_error(std::error_code ec) : system_error(ec, "") {}
 		system_error(std::error_code ec, const char *m) : system_error(ec, std::string(m)) {}
