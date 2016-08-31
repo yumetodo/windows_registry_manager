@@ -111,7 +111,13 @@ int main() {
 #else
 		std::cout
 #endif
-			<< reg.get_value<win32::registry_value_kind::expand_string>(_T("Personal")) << std::endl
+			<< reg.get_value<win32::registry_value_kind::expand_string>(_T("Personal")) << std::endl;
+		reg.close();
+#ifdef UNICODE
+		std::wcout
+#else
+		std::cout
+#endif
 			<< _T("ie version:") << GetIeVersion() << std::endl
 			<< _T("IsDotNet2:") << IsDotNet2() << std::endl
 			<< _T("IsDotNet4:") << IsDotNet4() << std::endl;
