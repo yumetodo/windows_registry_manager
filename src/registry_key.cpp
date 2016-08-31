@@ -81,7 +81,13 @@ namespace win32 {
 		: registry_key(reinterpret_cast<HKEY>(parent_key_handle), sub_key_root, rights, view)
 	{}
 	registry_key::registry_key(HKEY parent_key_handle, const TCHAR* sub_key_root, registry_rights rights, registry_view view)
-		: key() 
+		: key(), parent_key_handle_(parent_key_handle)
+	{
+		this->open(parent_key_handle, sub_key_root, rights, view);
+	}
+
+	registry_key::registry_key(const registry_key & parent_key_handle, const TCHAR * sub_key_root, registry_rights rights, registry_view view)
+		: parent_key_handle_(parent_key_handle.key)
 	{
 		this->open(parent_key_handle, sub_key_root, rights, view);
 	}
@@ -110,6 +116,11 @@ namespace win32 {
 		this->is_open_ = true;
 	}
 
+	void win32::registry_key::open(const registry_key & parent_key_handle, const TCHAR * sub_key_root, registry_rights rights, registry_view view)
+	{
+		this->open(reinterpret_cast<HKEY>(parent_key_handle.key), sub_key_root, rights, view);
+	}
+
 	void registry_key::close() WIN32_REG_NOEXCEPT_OR_NOTHROW
 	{
 		if (is_open_) {
@@ -134,37 +145,149 @@ namespace win32 {
 	{
 		return get_value_kind_and_size(key_name).first;
 	}
+	namespace detail {
+		std::chrono::system_clock::time_point make_chrono_time_point(const FILETIME& ft) {
+			return std::chrono::system_clock::from_time_t(
+				static_cast<time_t>(((static_cast<std::uint64_t>(ft.dwHighDateTime) << 32) + ft.dwLowDateTime - 116444736000000000) / 10000000)
+			);
+		}
+		struct sub_key_info { DWORD num; DWORD max_len; };
+		WIN32_REG_CONSTEXPR bool operator!=(const sub_key_info& l, const sub_key_info& r) { return l.max_len != r.max_len || r.num != l.num; }
+		sub_key_info get_sub_key_info(HKEY key) {
+			sub_key_info re;
+			LONG er = RegQueryInfoKey(
+				key, nullptr, nullptr, nullptr, &re.num, &re.max_len, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr
+			);
+			if (ERROR_SUCCESS != er) throw system_error(std::error_code(er, system_category()), '(' + std::to_string(er) + ')');
+			++re.max_len;//終端のNULLは含まれないことがある
+			return re;
+		}
+		LONG reg_enum_key_ex(HKEY key, DWORD max_len, DWORD i, tstring& buf, FILETIME* ft = nullptr) {
+			buf.resize(max_len);
+			DWORD len = max_len;
+			const auto er = RegEnumKeyEx(key, i, &buf[0], &len, nullptr, nullptr, nullptr, ft);
+			switch (er) {
+				case ERROR_SUCCESS: 
+					buf.resize(len);
+					buf.shrink_to_fit();
+				case ERROR_MORE_DATA: 
+				case ERROR_NO_MORE_ITEMS: 
+					return er;
+				default:
+					throw system_error(std::error_code(er, system_category()), '(' + std::to_string(er) + ')');
+			}
+		}
+	}
+	std::unordered_map<tstring, std::chrono::system_clock::time_point> win32::registry_key::get_sub_key_last_written_times()
+	{
+		this->check_open();
+		std::unordered_map<tstring, std::chrono::system_clock::time_point> re;
+		bool force_retry = false;
+		for (
+			detail::sub_key_info info = detail::get_sub_key_info(this->key), info_old = {}; 
+			info_old != info || force_retry;
+			info_old = info, info = detail::get_sub_key_info(this->key)
+		) {
+			if (!info.num) return{};
+			force_retry = false;
+			re.reserve(info.num);
+			LONG er = ERROR_SUCCESS;
+			for (DWORD i = 0; er != ERROR_NO_MORE_ITEMS; ++i) {
+				tstring buf;
+				FILETIME ft;
+				er = detail::reg_enum_key_ex(this->key, info.max_len, i, buf, &ft);
+				if (ERROR_MORE_DATA == er) {
+					re.clear();
+					force_retry = true;
+					break;
+				}
+				else if(ERROR_SUCCESS == er) re.insert(std::make_pair(std::move(buf), detail::make_chrono_time_point(ft)));
+			}
+		}
+		return re;
+	}
+	std::vector<tstring> win32::registry_key::get_sub_key_names()
+	{
+		this->check_open();
+		std::vector<tstring> re;
+		bool force_retry = false;
+		for (
+			detail::sub_key_info info = detail::get_sub_key_info(this->key), info_old = {};
+			info_old != info || force_retry;
+			info_old = info, info = detail::get_sub_key_info(this->key)
+		) {
+			if (!info.num) return{};
+			force_retry = false;
+			re.reserve(info.num);
+			LONG er = ERROR_SUCCESS;
+			for (DWORD i = 0; er != ERROR_NO_MORE_ITEMS; ++i) {
+				tstring buf;
+				er = detail::reg_enum_key_ex(this->key, info.max_len, i, buf);
+				if (ERROR_MORE_DATA == er) {
+					re.clear();
+					force_retry = true;
+					break;
+				}
+				else if (ERROR_SUCCESS == er) re.push_back(std::move(buf));
+			}
+		}
+		return re;
+	}
+
+	std::vector<tstring> win32::registry_key::get_value_names()
+	{
+		return std::vector<tstring>();
+	}
 
 	std::vector<std::uint8_t> registry_key::get_value_as_binary(const TCHAR * key_name)
 	{
 		const auto kind_and_size = get_value_kind_and_size(key_name);
 		if (registry_value_kind::binary != kind_and_size.first) throw std::runtime_error("specified key type is not corrent.");
 		std::vector<std::uint8_t> re;
-		DWORD old_size, new_size = kind_and_size.second;
+		DWORD old_size = kind_and_size.second, new_size = kind_and_size.second;
+		bool first_flg = true;
+		LSTATUS er;
 		do {
-			old_size = new_size;
+			if (old_size < new_size) old_size = new_size;
+			if (HKEY_PERFORMANCE_DATA == this->parent_key_handle_) {
+				if (!first_flg) {
+					++old_size;
+					new_size = old_size;
+				}
+			}
+			first_flg = false;
 			re.resize(old_size);
-			const auto er = RegQueryValueEx(this->key, key_name, 0, nullptr, reinterpret_cast<LPBYTE>(&re[0]), &new_size);
+			er = RegQueryValueEx(this->key, key_name, 0, nullptr, reinterpret_cast<LPBYTE>(&re[0]), &new_size);
 			if (ERROR_SUCCESS != er && ERROR_MORE_DATA != er) {
 				throw system_error(std::error_code(er, system_category()), '(' + std::to_string(er) + ')');
 			}
-		} while (old_size != new_size);
+		} while (ERROR_MORE_DATA == er);
 		return re;
 	}
-
+	namespace detail {
+		void get_value_as_string_impl(HKEY key, HKEY parent_key_handle, DWORD size, const TCHAR* key_name, tstring& re) {
+			DWORD old_size = size, new_size = size;
+			LSTATUS er;
+			do {
+				if (old_size < new_size) old_size = new_size;
+				if (HKEY_PERFORMANCE_DATA == parent_key_handle) {
+					++old_size;
+					new_size = old_size;
+				}
+				re.resize(old_size / sizeof(TCHAR));
+				er = RegQueryValueEx(key, key_name, 0, nullptr, reinterpret_cast<LPBYTE>(&re[0]), &new_size);
+				if (ERROR_SUCCESS != er && ERROR_MORE_DATA != er) {
+					throw system_error(std::error_code(er, system_category()), '(' + std::to_string(er) + ')');
+				}
+			} while (ERROR_MORE_DATA == er);
+		}
+	}
 	tstring registry_key::get_value_as_string(DWORD dwType, const TCHAR* key_name) {
 		const auto kind_and_size = get_value_kind_and_size(key_name);
 		if (dwType != static_cast<DWORD>(kind_and_size.first)) throw std::runtime_error("specified key type is not corrent.");
 		tstring re;
-		DWORD old_size, new_size = kind_and_size.second;
-		do {
-			old_size = new_size;
-			re.resize(old_size);
-			const auto er = RegQueryValueEx(this->key, key_name, 0, nullptr, reinterpret_cast<LPBYTE>(&re[0]), &new_size);
-			if (ERROR_SUCCESS != er && ERROR_MORE_DATA != er) {
-				throw system_error(std::error_code(er, system_category()), '(' + std::to_string(er) + ')');
-			}
-		} while (old_size != new_size);
+		detail::get_value_as_string_impl(this->key, this->parent_key_handle_, kind_and_size.second, key_name, re);
+		re.resize(std::char_traits<TCHAR>::length(re.c_str()));
 		return re;
 	}
 	std::vector<tstring> registry_key::get_value_as_string_arr(const TCHAR * key_name)
@@ -175,16 +298,8 @@ namespace win32 {
 		re.resize(1);
 		auto& buf = re[0];
 		const auto buf_p = &buf[0];
-		DWORD old_size, new_size = kind_and_size.second;
-		do {
-			old_size = new_size;
-			buf.resize(old_size);
-			//得られるのはNULL文字区切りのbyte列
-			const auto er = RegQueryValueEx(this->key, key_name, 0, nullptr, reinterpret_cast<LPBYTE>(buf_p), &new_size);
-			if (ERROR_SUCCESS != er && ERROR_MORE_DATA != er) {
-				throw system_error(std::error_code(er, system_category()), '(' + std::to_string(er) + ')');
-			}
-		} while (old_size != new_size);
+		//得られるのはNULL文字区切りのbyte列
+		detail::get_value_as_string_impl(this->key, this->parent_key_handle_, kind_and_size.second, key_name, buf);
 		using string_traits_type = std::basic_string<TCHAR>::traits_type;
 		for (
 			std::size_t i = string_traits_type::length(buf_p) + 1, l = string_traits_type::length(buf_p + i);//一つ目はすっ飛ばす

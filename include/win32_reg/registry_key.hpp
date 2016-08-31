@@ -12,6 +12,8 @@
 #include <type_traits>
 #include <utility>
 #include <vector>
+#include <unordered_map>
+#include <chrono>
 namespace win32 {
 	using tstring = std::basic_string<TCHAR>;
 	template<bool con> using concept = typename std::enable_if<con, std::nullptr_t>::type;
@@ -84,6 +86,7 @@ namespace win32 {
 	class registry_key {
 	private:
 		HKEY key;
+		HKEY parent_key_handle_;
 		bool is_open_;
 		std::vector<std::uint8_t> get_value_as_binary(const TCHAR* key_name);
 		tstring get_value_as_string(DWORD dwType, const TCHAR* key_name);
@@ -96,6 +99,7 @@ namespace win32 {
 		registry_key() = default;
 		registry_key(registry_hive parent_key_handle, const TCHAR* sub_key_root, registry_rights rights, registry_view view = registry_view::v_default);
 		registry_key(HKEY parent_key_handle, const TCHAR* sub_key_root, registry_rights rights, registry_view view = registry_view::v_default);
+		registry_key(const registry_key& parent_key_handle, const TCHAR* sub_key_root, registry_rights rights, registry_view view = registry_view::v_default);
 		registry_key(const registry_key&) = delete;
 		registry_key(registry_key&&) = delete;
 		registry_key& operator=(const registry_key&) = delete;
@@ -103,6 +107,7 @@ namespace win32 {
 		~registry_key() WIN32_REG_NOEXCEPT_OR_NOTHROW;
 		void open(registry_hive parent_key_handle, const TCHAR* sub_key_root, registry_rights rights, registry_view view = registry_view::v_default);
 		void open(HKEY parent_key_handle, const TCHAR* sub_key_root, registry_rights rights, registry_view view = registry_view::v_default);
+		void open(const registry_key& parent_key_handle, const TCHAR* sub_key_root, registry_rights rights, registry_view view = registry_view::v_default);
 		void close() WIN32_REG_NOEXCEPT_OR_NOTHROW;
 		bool is_open() const WIN32_REG_NOEXCEPT_OR_NOTHROW;
 		registry_value_kind get_value_kind(const TCHAR* key_name) const;
@@ -132,5 +137,8 @@ namespace win32 {
 		std::vector<std::uint8_t> get_value(const TCHAR* key_name) {
 			return get_value_as_binary(key_name);
 		}
+		std::unordered_map<tstring, std::chrono::system_clock::time_point> get_sub_key_last_written_times();
+		std::vector<tstring> get_sub_key_names();
+		std::vector<tstring> get_value_names();
 	};
 }

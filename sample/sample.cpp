@@ -102,16 +102,26 @@ int main() {
 	try {
 		win32::registry_key reg(
 			win32::registry_hive::current_user, 
-			_T(R"(Software\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders)"),
+			_T(R"(Software\Microsoft\Windows\CurrentVersion\Explorer)"),
 			win32::registry_rights::read_key
 		);
+		for (auto&& s : reg.get_sub_key_names()) {
 #ifdef UNICODE
-		std::wcout.imbue(std::locale(""));
+			std::wcout.imbue(std::locale(""));
+			std::wcout
+#else
+			std::cout
+#endif
+				<< s << std::endl;
+		}
+#ifdef UNICODE
 		std::wcout
 #else
 		std::cout
 #endif
-			<< reg.get_value<win32::registry_value_kind::expand_string>(_T("Personal")) << std::endl;
+			<< win32::registry_key(reg, _T("User Shell Folders"), win32::registry_rights::read_key)
+			.get_value<win32::registry_value_kind::expand_string>(_T("Personal"))
+			<< std::endl;
 		reg.close();
 #ifdef UNICODE
 		std::wcout
