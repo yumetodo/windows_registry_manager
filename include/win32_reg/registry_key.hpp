@@ -24,7 +24,7 @@ namespace win32 {
 #endif
 		classes_root = 0x80000000,//HKEY_CLASSES_ROOT,
 		current_user = 0x80000001,//HKEY_CURRENT_USER,
-		local_machine = 0x80000003,//HKEY_LOCAL_MACHINE,
+		local_machine = 0x80000002,//HKEY_LOCAL_MACHINE,
 		performance_data = 0x80000004,//HKEY_PERFORMANCE_DATA,
 		users = 0x80000003,//HKEY_USERS
 	};
