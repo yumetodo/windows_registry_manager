@@ -81,13 +81,12 @@ namespace win32 {
 		: registry_key(reinterpret_cast<HKEY>(parent_key_handle), sub_key_root, rights, view)
 	{}
 	registry_key::registry_key(HKEY parent_key_handle, const TCHAR* sub_key_root, registry_rights rights, registry_view view)
-		: key(), parent_key_handle_(parent_key_handle)
+		: key()
 	{
 		this->open(parent_key_handle, sub_key_root, rights, view);
 	}
 
 	registry_key::registry_key(const registry_key & parent_key_handle, const TCHAR * sub_key_root, registry_rights rights, registry_view view)
-		: parent_key_handle_(parent_key_handle.key)
 	{
 		this->open(parent_key_handle, sub_key_root, rights, view);
 	}
@@ -114,6 +113,7 @@ namespace win32 {
 			throw system_error(std::error_code(er, system_category()), "RegOpenKeyEx:(" + std::to_string(er) + ')');
 		}
 		this->is_open_ = true;
+		this->parent_key_handle_ = parent_key_handle;
 	}
 
 	void win32::registry_key::open(const registry_key & parent_key_handle, const TCHAR * sub_key_root, registry_rights rights, registry_view view)
