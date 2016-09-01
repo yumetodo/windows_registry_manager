@@ -3,39 +3,27 @@
 #include <locale>
 #include <tchar.h>
 #include <memory>
-int GetFileVersion(const TCHAR* file)
+int get_file_version(const TCHAR* file)
 {
 	ULONG reserved = 0;
-	VS_FIXEDFILEINFO vffi;
-	TCHAR *buf = NULL;
-	int  Locale = 0;
-	TCHAR str[256];
-	str[0] = '\0';
-
-	UINT size = GetFileVersionInfoSize((TCHAR*)file, &reserved);
+	UINT size = GetFileVersionInfoSize(file, &reserved);
 	auto vbuf = std::make_unique<TCHAR[]>(size);
-	if (GetFileVersionInfo((TCHAR*)file, 0, size, vbuf.get()))
+	if (GetFileVersionInfo(file, 0, size, vbuf.get()))
 	{
-		VerQueryValue(vbuf.get(), _T("\\"), (void**)&buf, &size);
-		CopyMemory(&vffi, buf, sizeof(VS_FIXEDFILEINFO));
-
-		VerQueryValue(vbuf.get(), _T("\\VarFileInfo\\Translation"), (void**)&buf, &size);
+		TCHAR *buf = nullptr;
+		VerQueryValue(vbuf.get(), _T("\\VarFileInfo\\Translation"), reinterpret_cast<void**>(&buf), &size);
+		int Locale = 0;
 		CopyMemory(&Locale, buf, sizeof(int));
+		TCHAR str[256];
 		wsprintf(str, _T("\\StringFileInfo\\%04X%04X\\%s"), LOWORD(Locale), HIWORD(Locale), _T("FileVersion"));
-		VerQueryValue(vbuf.get(), str, (void**)&buf, &size);
-
-		_tcscpy_s(str, 256, buf);
+		VerQueryValue(vbuf.get(), str, reinterpret_cast<void**>(&buf), &size);
+		if(std::char_traits<TCHAR>::length(buf)) return int(std::stof(buf) * 100);
 	}
-	if (_tcscmp(str, _T("")) != 0){
-		return int(std::stof(str) * 100);
-	}
-	else{
-		return 0;
-	}
+	return 0;
 }
-int GetIeVersion()
+int get_ie_version()
 {
-	switch (GetFileVersion(_T("Shdocvw.dll")))
+	switch (get_file_version(_T("Shdocvw.dll")))
 	{
 		case 470: return 300;
 		case 471: return 400;
@@ -59,7 +47,7 @@ int GetIeVersion()
 	}
 }
 
-bool IsDotNet2()
+bool is_dot_net2()
 {
 	win32::registry_key reg;
 	try {
@@ -79,7 +67,7 @@ bool IsDotNet2()
 	return 1 == reg.get_value<win32::registry_value_kind::dword>(_T("Install"));
 }
 
-BOOL IsDotNet4()
+BOOL is_dot_net4()
 {
 	win32::registry_key reg;
 	try {
@@ -125,9 +113,9 @@ int main() {
 		reg.close();
 		tcout 
 			<< std::endl
-			<< _T("ie version:") << GetIeVersion() << std::endl
-			<< _T("IsDotNet2:") << IsDotNet2() << std::endl
-			<< _T("IsDotNet4:") << IsDotNet4() << std::endl;
+			<< _T("ie version:") << get_ie_version() << std::endl
+			<< _T("is_dot_net2:") << is_dot_net2() << std::endl
+			<< _T("is_dot_net4:") << is_dot_net4() << std::endl;
 		return 0;
 	}
 	catch (std::exception &er) {
