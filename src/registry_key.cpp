@@ -9,7 +9,7 @@
 #ifdef _MSC_VER
 #	pragma comment(lib, "Ws2_32.lib")
 #endif
-#include "registry_key.hpp"
+#include "win32_reg/registry_key.hpp"
 #include <cstring>
 #include <codecvt>
 
