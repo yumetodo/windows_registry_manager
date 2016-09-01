@@ -123,7 +123,8 @@ int main() {
 			tcout << s << std::endl;
 		}
 		reg.close();
-		tcout << std::endl
+		tcout 
+			<< std::endl
 			<< _T("ie version:") << GetIeVersion() << std::endl
 			<< _T("IsDotNet2:") << IsDotNet2() << std::endl
 			<< _T("IsDotNet4:") << IsDotNet4() << std::endl;

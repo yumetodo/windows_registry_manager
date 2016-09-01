@@ -108,7 +108,8 @@ namespace win32 {
 #else
 		if (view == registry_view::v_default) view = registry_view::v_32;
 #endif
-		const auto er = RegOpenKeyEx(parent_key_handle, sub_key_root, 0, static_cast<std::uint32_t>(rights) | static_cast<std::uint32_t>(view), &this->key);
+		const REGSAM r = static_cast<std::uint32_t>(rights) | static_cast<std::uint32_t>(view);
+		const auto er = RegOpenKeyEx(parent_key_handle, sub_key_root, 0, r, &this->key);
 		if (ERROR_SUCCESS != er) {
 			throw system_error(std::error_code(er, system_category()), "RegOpenKeyEx:(" + std::to_string(er) + ')');
 		}
