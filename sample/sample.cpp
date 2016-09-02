@@ -3,6 +3,8 @@
 #include <locale>
 #include <tchar.h>
 #include <memory>
+using microsoft::win32::registry_key;
+using microsoft::win32::registry_value_kind;
 int get_file_version(const TCHAR* file)
 {
 	ULONG reserved = 0;
@@ -33,14 +35,14 @@ int get_ie_version()
 		case 600:
 		default: {
 			int ieVersion = 600;
-			win32::registry_key reg(
-				win32::registry_hive::local_machine, 
+			registry_key reg(
+				microsoft::win32::registry_hive::local_machine,
 				_T("SOFTWARE\\Microsoft\\Internet Explorer"), 
-				win32::registry_rights::read_key
+				system::security::registry_rights::read_key
 			);
-			ieVersion = std::stoi(reg.get_value<win32::registry_value_kind::string>(_T("Version"))) * 100;
+			ieVersion = std::stoi(reg.get_value<registry_value_kind::string>(_T("Version"))) * 100;
 			if (ieVersion == 900) {
-				ieVersion = std::stoi(reg.get_value<win32::registry_value_kind::string>(_T("svcVersion"))) * 100;
+				ieVersion = std::stoi(reg.get_value<registry_value_kind::string>(_T("svcVersion"))) * 100;
 			}
 			return ieVersion;
 		}
@@ -49,42 +51,42 @@ int get_ie_version()
 
 bool is_dot_net2()
 {
-	win32::registry_key reg;
+	registry_key reg;
 	try {
 		reg.open(
-			win32::registry_hive::local_machine,
+			microsoft::win32::registry_hive::local_machine,
 			_T("Software\\Microsoft\\NET Framework Setup\\NDP\\v2.0.50727"),
-			win32::registry_rights::read_key
+			system::security::registry_rights::read_key
 		);
 	}
 	catch (...) {
 		reg.open(
-			win32::registry_hive::local_machine,
+			microsoft::win32::registry_hive::local_machine,
 			_T("Software\\Wow6432Node\\Microsoft\\NET Framework Setup\\NDP\\v2.0.50727"),
-			win32::registry_rights::read_key
+			system::security::registry_rights::read_key
 		);
 	}
-	return 1 == reg.get_value<win32::registry_value_kind::dword>(_T("Install"));
+	return 1 == reg.get_value<registry_value_kind::dword>(_T("Install"));
 }
 
 BOOL is_dot_net4()
 {
-	win32::registry_key reg;
+	registry_key reg;
 	try {
 		reg.open(
-			win32::registry_hive::local_machine,
+			microsoft::win32::registry_hive::local_machine,
 			_T("Software\\Microsoft\\NET Framework Setup\\NDP\\v4\\Client"),
-			win32::registry_rights::read_key
+			system::security::registry_rights::read_key
 		);
 	}
 	catch (...) {
 		reg.open(
-			win32::registry_hive::local_machine,
+			microsoft::win32::registry_hive::local_machine,
 			_T("Software\\Microsoft\\NET Framework Setup\\NDP\\v4\\Full"),
-			win32::registry_rights::read_key
+			system::security::registry_rights::read_key
 		);
 	}
-	return 1 == reg.get_value<win32::registry_value_kind::dword>(_T("Install"));
+	return 1 == reg.get_value<registry_value_kind::dword>(_T("Install"));
 }
 #ifdef UNICODE
 #define tcout std::wcout
@@ -94,10 +96,10 @@ BOOL is_dot_net4()
 
 int main() {
 	try {
-		win32::registry_key reg(
-			win32::registry_hive::current_user, 
+		registry_key reg(
+			microsoft::win32::registry_hive::current_user,
 			_T(R"(Software\Microsoft\Windows\CurrentVersion\Explorer)"),
-			win32::registry_rights::read_key
+			system::security::registry_rights::read_key
 		);
 #ifdef UNICODE
 		std::wcout.imbue(std::locale(""));
@@ -105,8 +107,8 @@ int main() {
 		for (auto&& s : reg.get_sub_key_names()) {
 			tcout << s << std::endl;
 		}
-		win32::registry_key reg2(reg, _T("User Shell Folders"), win32::registry_rights::read_key);
-		tcout << reg2.get_value<win32::registry_value_kind::expand_string>(_T("Personal")) << std::endl << std::endl;
+		registry_key reg2(reg, _T("User Shell Folders"), system::security::registry_rights::read_key);
+		tcout << reg2.get_value<registry_value_kind::expand_string>(_T("Personal")) << std::endl << std::endl;
 		for (auto&& s : reg.get_value_names()) {
 			tcout << s << std::endl;
 		}
