@@ -38,7 +38,7 @@ int get_ie_version()
 			registry_key reg(
 				microsoft::win32::registry_hive::local_machine,
 				_T("SOFTWARE\\Microsoft\\Internet Explorer"), 
-				system::security::registry_rights::read_key
+				w_system::security::registry_rights::read_key
 			);
 			ieVersion = std::stoi(reg.get_value<registry_value_kind::string>(_T("Version"))) * 100;
 			if (ieVersion == 900) {
@@ -56,14 +56,14 @@ bool is_dot_net2()
 		reg.open(
 			microsoft::win32::registry_hive::local_machine,
 			_T("Software\\Microsoft\\NET Framework Setup\\NDP\\v2.0.50727"),
-			system::security::registry_rights::read_key
+			w_system::security::registry_rights::read_key
 		);
 	}
 	catch (...) {
 		reg.open(
 			microsoft::win32::registry_hive::local_machine,
 			_T("Software\\Wow6432Node\\Microsoft\\NET Framework Setup\\NDP\\v2.0.50727"),
-			system::security::registry_rights::read_key
+			w_system::security::registry_rights::read_key
 		);
 	}
 	return 1 == reg.get_value<registry_value_kind::dword>(_T("Install"));
@@ -76,14 +76,14 @@ BOOL is_dot_net4()
 		reg.open(
 			microsoft::win32::registry_hive::local_machine,
 			_T("Software\\Microsoft\\NET Framework Setup\\NDP\\v4\\Client"),
-			system::security::registry_rights::read_key
+			w_system::security::registry_rights::read_key
 		);
 	}
 	catch (...) {
 		reg.open(
 			microsoft::win32::registry_hive::local_machine,
 			_T("Software\\Microsoft\\NET Framework Setup\\NDP\\v4\\Full"),
-			system::security::registry_rights::read_key
+			w_system::security::registry_rights::read_key
 		);
 	}
 	return 1 == reg.get_value<registry_value_kind::dword>(_T("Install"));
@@ -99,7 +99,7 @@ int main() {
 		registry_key reg(
 			microsoft::win32::registry_hive::current_user,
 			_T(R"(Software\Microsoft\Windows\CurrentVersion\Explorer)"),
-			system::security::registry_rights::read_key
+			w_system::security::registry_rights::read_key
 		);
 #ifdef UNICODE
 		std::wcout.imbue(std::locale(""));
@@ -107,7 +107,7 @@ int main() {
 		for (auto&& s : reg.get_sub_key_names()) {
 			tcout << s << std::endl;
 		}
-		registry_key reg2(reg, _T("User Shell Folders"), system::security::registry_rights::read_key);
+		registry_key reg2(reg, _T("User Shell Folders"), w_system::security::registry_rights::read_key);
 		tcout << reg2.get_value<registry_value_kind::expand_string>(_T("Personal")) << std::endl << std::endl;
 		for (auto&& s : reg.get_value_names()) {
 			tcout << s << std::endl;

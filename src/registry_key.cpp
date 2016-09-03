@@ -77,16 +77,16 @@ namespace microsoft {
 		using std::system_category;
 		using std::system_error;
 #endif
-		registry_key::registry_key(registry_hive parent_key_handle, const TCHAR * sub_key_root, system::security::registry_rights rights, registry_view view)
+		registry_key::registry_key(registry_hive parent_key_handle, const TCHAR * sub_key_root, w_system::security::registry_rights rights, registry_view view)
 			: registry_key(reinterpret_cast<HKEY>(parent_key_handle), sub_key_root, rights, view)
 		{}
-		registry_key::registry_key(HKEY parent_key_handle, const TCHAR* sub_key_root, system::security::registry_rights rights, registry_view view)
+		registry_key::registry_key(HKEY parent_key_handle, const TCHAR* sub_key_root, w_system::security::registry_rights rights, registry_view view)
 			: key()
 		{
 			this->open(parent_key_handle, sub_key_root, rights, view);
 		}
 
-		registry_key::registry_key(const registry_key & parent_key_handle, const TCHAR * sub_key_root, system::security::registry_rights rights, registry_view view)
+		registry_key::registry_key(const registry_key & parent_key_handle, const TCHAR * sub_key_root, w_system::security::registry_rights rights, registry_view view)
 		{
 			this->open(parent_key_handle, sub_key_root, rights, view);
 		}
@@ -95,12 +95,12 @@ namespace microsoft {
 			this->close();
 		}
 
-		void registry_key::open(registry_hive parent_key_handle, const TCHAR * sub_key_root, system::security::registry_rights rights, registry_view view)
+		void registry_key::open(registry_hive parent_key_handle, const TCHAR * sub_key_root, w_system::security::registry_rights rights, registry_view view)
 		{
 			this->open(reinterpret_cast<HKEY>(parent_key_handle), sub_key_root, rights, view);
 		}
 
-		void registry_key::open(HKEY parent_key_handle, const TCHAR * sub_key_root, system::security::registry_rights rights, registry_view view)
+		void registry_key::open(HKEY parent_key_handle, const TCHAR * sub_key_root, w_system::security::registry_rights rights, registry_view view)
 		{
 			//http://stackoverflow.com/questions/12619372/what-is-the-difference-between-registry-localmachine-and-registrykey-openbasekey
 #ifdef _WIN64
@@ -117,7 +117,7 @@ namespace microsoft {
 			this->parent_key_handle_ = parent_key_handle;
 		}
 
-		void win32::registry_key::open(const registry_key & parent_key_handle, const TCHAR * sub_key_root, system::security::registry_rights rights, registry_view view)
+		void win32::registry_key::open(const registry_key & parent_key_handle, const TCHAR * sub_key_root, w_system::security::registry_rights rights, registry_view view)
 		{
 			this->open(reinterpret_cast<HKEY>(parent_key_handle.key), sub_key_root, rights, view);
 		}

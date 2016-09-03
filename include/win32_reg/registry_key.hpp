@@ -14,8 +14,11 @@
 #include <vector>
 #include <unordered_map>
 #include <chrono>
-namespace system {
+#include <climits>
+#include <array>
+namespace w_system {
 	namespace security {
+		template<bool con> using concept = typename std::enable_if<con, std::nullptr_t>::type;
 		enum class registry_rights : std::uint32_t {
 			//from C# System.Security.AccessControl.RegistryRights
 			delete_permissions = DELETE,//C# original name is Delete however, we rename this to avoid name conflict with reserved keyword.
@@ -102,17 +105,17 @@ namespace microsoft {
 			std::pair<registry_value_kind, DWORD> get_value_kind_and_size(const TCHAR* key_name) const;
 		public:
 			registry_key() = default;
-			registry_key(registry_hive parent_key_handle, const TCHAR* sub_key_root, system::security::registry_rights rights, registry_view view = registry_view::v_default);
-			registry_key(HKEY parent_key_handle, const TCHAR* sub_key_root, system::security::registry_rights rights, registry_view view = registry_view::v_default);
-			registry_key(const registry_key& parent_key_handle, const TCHAR* sub_key_root, system::security::registry_rights rights, registry_view view = registry_view::v_default);
+			registry_key(registry_hive parent_key_handle, const TCHAR* sub_key_root, w_system::security::registry_rights rights, registry_view view = registry_view::v_default);
+			registry_key(HKEY parent_key_handle, const TCHAR* sub_key_root, w_system::security::registry_rights rights, registry_view view = registry_view::v_default);
+			registry_key(const registry_key& parent_key_handle, const TCHAR* sub_key_root, w_system::security::registry_rights rights, registry_view view = registry_view::v_default);
 			registry_key(const registry_key&) = delete;
 			registry_key(registry_key&&) = delete;
 			registry_key& operator=(const registry_key&) = delete;
 			registry_key& operator=(registry_key&&) = delete;
 			~registry_key() WIN32_REG_NOEXCEPT_OR_NOTHROW;
-			void open(registry_hive parent_key_handle, const TCHAR* sub_key_root, system::security::registry_rights rights, registry_view view = registry_view::v_default);
-			void open(HKEY parent_key_handle, const TCHAR* sub_key_root, system::security::registry_rights rights, registry_view view = registry_view::v_default);
-			void open(const registry_key& parent_key_handle, const TCHAR* sub_key_root, system::security::registry_rights rights, registry_view view = registry_view::v_default);
+			void open(registry_hive parent_key_handle, const TCHAR* sub_key_root, w_system::security::registry_rights rights, registry_view view = registry_view::v_default);
+			void open(HKEY parent_key_handle, const TCHAR* sub_key_root, w_system::security::registry_rights rights, registry_view view = registry_view::v_default);
+			void open(const registry_key& parent_key_handle, const TCHAR* sub_key_root, w_system::security::registry_rights rights, registry_view view = registry_view::v_default);
 			void close() WIN32_REG_NOEXCEPT_OR_NOTHROW;
 			bool is_open() const WIN32_REG_NOEXCEPT_OR_NOTHROW;
 			registry_value_kind get_value_kind(const TCHAR* key_name) const;
