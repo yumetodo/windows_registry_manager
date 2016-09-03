@@ -175,6 +175,12 @@ namespace w_system {
 				WIN32_REG_CONSTEXPR bool operator==(const generic_ace& r) const WIN32_REG_NOEXCEPT_OR_NOTHROW {
 					return this->ace_type_ == r.ace_type_ && this->ace_flags_ == r.ace_flags_;
 				}
+				WIN32_REG_CONSTEXPR bool operator!=(const generic_ace& r) const WIN32_REG_NOEXCEPT_OR_NOTHROW {
+					return !(r == *this);
+				}
+				virtual void get_binary_form(const std::vector<std::uint8_t>& binary_form, std::size_t offset) = delete;
+				template<std::size_t N, concept<(2 <= N)> = nullptr>
+				virtual void get_binary_form(const std::array<std::uint8_t, N>& binary_form, std::size_t offset) = delete;
 			};
 			class object_security {};
 			class registry_security {};
