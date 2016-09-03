@@ -50,7 +50,145 @@ namespace w_system {
 		inline WIN32_REG_CONSTEXPR registry_rights operator| (registry_rights l, registry_rights r) {
 			return static_cast<registry_rights>(static_cast<std::uint64_t>(l) | static_cast<std::uint64_t>(r));
 		}
+		namespace access_control {
+			enum class ace_flags : std::uint8_t {
+				None = 0,
+				ObjectInherit = 0x01,
+				ContainerInherit = 0x02,
+				NoPropagateInherit = 0x04,
+				InheritOnly = 0x08,
+				InheritanceFlags = ObjectInherit | ContainerInherit | NoPropagateInherit | InheritOnly,
+				Inherited = 0x10,
+				SuccessfulAccess = 0x40,
+				FailedAccess = 0x80,
+				AuditFlags = SuccessfulAccess | FailedAccess,
+			};
+			inline WIN32_REG_CONSTEXPR ace_flags operator& (ace_flags l, ace_flags r) { 
+				return static_cast<ace_flags>(static_cast<std::uint8_t>(l) & static_cast<std::uint8_t>(r));
+			}
+			inline WIN32_REG_CONSTEXPR ace_flags operator| (ace_flags l, ace_flags r) {
+				return static_cast<ace_flags>(static_cast<std::uint8_t>(l) | static_cast<std::uint8_t>(r));
+			}
+			inline WIN32_REG_CONSTEXPR bool operator==(ace_flags l, std::nullptr_t) { return 0 == static_cast<std::uint8_t>(l); }
+			inline WIN32_REG_CONSTEXPR bool operator==(std::nullptr_t, ace_flags r) { return r == 0; }
+			inline WIN32_REG_CONSTEXPR bool operator!=(ace_flags l, std::nullptr_t) { return !(0 == l); }
+			inline WIN32_REG_CONSTEXPR bool operator!=(std::nullptr_t, ace_flags r) { return !(0 == r); }
+			enum class ace_type : std::uint8_t {
+				AccessAllowed = 0,
+				AccessDenied = 1,
+				SystemAudit = 2,
+				SystemAlarm = 3,
+				AccessAllowedCompound = 4,
+				AccessAllowedObject = 5,
+				AccessDeniedObject = 6,
+				SystemAuditObject = 7,
+				SystemAlarmObject = 8,
+				AccessAllowedCallback = 9,
+				AccessDeniedCallback = 10,
+				AccessAllowedCallbackObject = 11,
+				AccessDeniedCallbackObject = 12,
+				SystemAuditCallback = 13,
+				SystemAlarmCallback = 14,
+				SystemAuditCallbackObject = 15,
+				SystemAlarmCallbackObject = 16,
+				MaxDefinedAceType = 16,
+			};
+			enum class audit_flags : std::uint8_t {
+				None = 0,
+				Success = 1,
+				Failure = 2,
+			};
+			enum class inheritance_flags : std::uint8_t {
+				None = 0,
+				ContainerInherit = 1,
+				ObjectInherit = 2,
+			};
+			enum class propagation_flags : std::uint8_t {
+				None = 0,
+				NoPropagateInherit = 1,
+				InheritOnly = 2,
+			};
+			class generic_ace {
+			private:
+				ace_type ace_type_;
+				ace_flags ace_flags_;
+			public:
+				//observer
+				WIN32_REG_CONSTEXPR_OR_CONST ace_type type() const WIN32_REG_NOEXCEPT_OR_NOTHROW { return this->ace_type_; }
+				ace_flags& flags() { return this->ace_flags_; }
+				WIN32_REG_CONSTEXPR_OR_CONST ace_flags flags() const WIN32_REG_NOEXCEPT_OR_NOTHROW { return this->ace_flags_; }
+				//constructor
+				WIN32_REG_CONSTEXPR_OR_CONST generic_ace(const generic_ace& o) WIN32_REG_NOEXCEPT_OR_NOTHROW
+					: ace_type_(o.ace_type_), ace_flags_(o.ace_flags_)
+				{}
+			protected:
+				WIN32_REG_CONSTEXPR generic_ace(ace_type type, ace_flags flags) WIN32_REG_NOEXCEPT_OR_NOTHROW
+					: ace_type_(type), ace_flags_(flags)
+				{}
+				template<std::size_t N, concept<(2 <= N)> = nullptr>
+				WIN32_REG_CONSTEXPR generic_ace(const std::array<std::uint8_t, N>& binary_form, std::size_t offset) WIN32_REG_NOEXCEPT_OR_NOTHROW :
+					ace_type_(static_cast<ace_type>(binary_form[offset])),
+					ace_flags_(static_cast<ace_flags>(binary_form[offset + 1]))
+				{}
+				generic_ace(const std::vector<std::uint8_t>& binary_form, std::size_t offset) : 
+					ace_type_(static_cast<ace_type>(binary_form.at(offset))),
+					ace_flags_(static_cast<ace_flags>(binary_form.at(offset + 1)))
+				{}
+				WIN32_REG_CONSTEXPR audit_flags audit_flags() const WIN32_REG_NOEXCEPT_OR_NOTHROW {
+					return
+						(0 != (this->ace_flags_ & ace_flags::SuccessfulAccess)) ? audit_flags::Success :
+						(0 != (this->ace_flags_ & ace_flags::FailedAccess)) ? audit_flags::Failure :
+						audit_flags::None;
+				}
+				virtual std::size_t binary_length() = delete;
+				WIN32_REG_CONSTEXPR inheritance_flags inheritance_flags() const WIN32_REG_NOEXCEPT_OR_NOTHROW {
+					return
+						(0 != (this->ace_flags_ & ace_flags::ObjectInherit)) ? inheritance_flags::ObjectInherit :
+						(0 != (this->ace_flags_ & ace_flags::ContainerInherit)) ? inheritance_flags::ContainerInherit :
+						inheritance_flags::None;
+				}
+				WIN32_REG_CONSTEXPR bool is_inherited() const WIN32_REG_NOEXCEPT_OR_NOTHROW { 
+					return ace_flags::None != (this->ace_flags_ & ace_flags::Inherited); 
+				}
+				WIN32_REG_CONSTEXPR propagation_flags propagation_flags() const WIN32_REG_NOEXCEPT_OR_NOTHROW {
+					return
+						(0 != (this->ace_flags_ & ace_flags::InheritOnly)) ? propagation_flags::InheritOnly :
+						(0 != (this->ace_flags_ & ace_flags::NoPropagateInherit)) ? propagation_flags::NoPropagateInherit :
+						propagation_flags::None;
+				}
+				/*
+				public static GenericAce CreateFromBinaryForm (byte[] binaryForm, int offset)
+				{
+					if (binaryForm == null)
+						throw new ArgumentNullException("binaryForm");
+			
+					if (offset < 0 || offset > binaryForm.Length - 1)
+						throw new ArgumentOutOfRangeException("offset", offset, "Offset out of range");
+			
+					AceType type = (AceType)binaryForm[offset];
+					if (IsObjectType(type))
+						return new ObjectAce(binaryForm, offset);
+					else
+						return new CommonAce(binaryForm, offset);
+				}
+				*/
+				WIN32_REG_CONSTEXPR bool operator==(const generic_ace& r) const WIN32_REG_NOEXCEPT_OR_NOTHROW {
+					return this->ace_type_ == r.ace_type_ && this->ace_flags_ == r.ace_flags_;
+				}
+			};
+			class object_security {};
+			class registry_security {};
+		}
 	}
+}
+namespace std {
+	template <>
+	class hash<w_system::security::access_control::generic_ace> {
+	public:
+		WIN32_REG_CONSTEXPR size_t operator()(const w_system::security::access_control::generic_ace& x) const {
+			return 0x9e377901 ^ ((static_cast<size_t>(x.flags()) << (sizeof(size_t) + sizeof(uint8_t) * CHAR_BIT)) & static_cast<size_t>(x.type()));
+		}
+	};
 }
 namespace microsoft {
 	namespace win32 {
