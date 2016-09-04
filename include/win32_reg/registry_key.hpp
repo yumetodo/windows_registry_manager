@@ -50,6 +50,16 @@ namespace w_system {
 		inline WIN32_REG_CONSTEXPR registry_rights operator| (registry_rights l, registry_rights r) {
 			return static_cast<registry_rights>(static_cast<std::uint64_t>(l) | static_cast<std::uint64_t>(r));
 		}
+		namespace principal {
+			class security_identifier {
+			private:
+				std::vector<std::uint8_t> buffer;
+
+			public:
+				WIN32_REG_STATIC_CONSTEXPR int MaxBinaryLength = 68;
+				WIN32_REG_STATIC_CONSTEXPR int MinBinaryLength = 8;
+			};
+		}
 		namespace access_control {
 			enum class ace_flags : std::uint8_t {
 				None = 0,
@@ -107,6 +117,17 @@ namespace w_system {
 				None = 0,
 				NoPropagateInherit = 1,
 				InheritOnly = 2,
+			};
+			enum class object_ace_flags : std::uint8_t {
+				None = 0,
+				ObjectAceTypePresent = 1,
+				InheritedObjectAceTypePresent = 2,
+			};
+			enum class ace_qualifier : std::uint8_t {
+				AccessAllowed = 0,
+				AccessDenied = 1,
+				SystemAudit = 2,
+				SystemAlarm = 3,
 			};
 			class generic_ace {
 			private:
@@ -181,6 +202,46 @@ namespace w_system {
 				virtual void get_binary_form(const std::vector<std::uint8_t>& binary_form, std::size_t offset) = delete;
 				template<std::size_t N, concept<(2 <= N)> = nullptr>
 				virtual void get_binary_form(const std::array<std::uint8_t, N>& binary_form, std::size_t offset) = delete;
+			};
+			class known_ace : public generic_ace {
+			public:
+				using security_identifier = ::w_system::security::principal::security_identifier;
+			private:
+				int access_mask;
+				security_identifier identifier;
+			};
+			class qualified_ace : public known_ace {};
+			class object_ace : public qualified_ace {
+			private:
+				GUID object_ace_type;
+				GUID inherited_object_type;
+				object_ace_flags object_ace_flags;
+				static WIN32_REG_CONSTEXPR ace_type convert_type(ace_qualifier qualifier, bool isCallback)
+				{
+					return
+						(qualifier == ace_qualifier::AccessAllowed)
+						? (isCallback) ? ace_type::AccessAllowedCallbackObject : ace_type::AccessAllowedObject :
+						(qualifier == ace_qualifier::AccessDenied)
+						? (isCallback) ? ace_type::AccessDeniedCallbackObject : ace_type::AccessDeniedObject :
+						(qualifier == ace_qualifier::SystemAlarm)
+						? (isCallback) ? ace_type::SystemAlarmCallbackObject : ace_type::SystemAlarmObject :
+						(isCallback) ? ace_type::SystemAuditCallbackObject : ace_type::SystemAuditObject;
+				}
+			public:
+				/*object_ace(ace_flags aceFlags, ace_qualifier qualifier,
+					int accessMask, security_identifier sid,
+					ObjectAceFlags flags, GUID type,
+					GUID inheritedType, bool isCallback,
+					const std::vector<std::uint8_t>& opaque)
+					: generic_ace(convert_type(qualifier, isCallback), aceFlags, opaque)
+				{
+					AccessMask = accessMask;
+					SecurityIdentifier = sid;
+					ObjectAceFlags = flags;
+					ObjectAceType = type;
+					InheritedObjectAceType = inheritedType;
+				}*/
+
 			};
 			class object_security {};
 			class registry_security {};
