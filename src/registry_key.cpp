@@ -17,7 +17,7 @@ namespace microsoft {
 #if defined(_MSC_VER) && _MSC_VER < 1900
 		std::string format_message(DWORD lasterr) {
 			char* buf = nullptr;
-			const auto len = FormatMessageA(
+			const DWORD len = FormatMessageA(
 				FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_ARGUMENT_ARRAY,
 				nullptr,
 				lasterr,
@@ -26,10 +26,15 @@ namespace microsoft {
 				0,
 				nullptr
 			);
-			auto i = (len < 3) ? 0 : len - 3;
+			DWORD i = (len < 3) ? 0 : len - 3;
 			for (; '\r' != buf[i] && '\n' != buf[i] && '\0' != buf[i]; i++);//改行文字削除
 			buf[i] = '\0';
-			std::string ret = buf;//エラーメッセージ作成
+			std::string ret;
+			try{
+				ret = buf;//エラーメッセージをコピー
+			}
+			catch(...){//ここで例外を投げるよりはエラーメッセージなしのほうが良いので握りつぶす
+			}
 			LocalFree(buf);//FormatMessageAでFORMAT_MESSAGE_ALLOCATE_BUFFERを指定したので必ず開放
 			return ret;
 		}
