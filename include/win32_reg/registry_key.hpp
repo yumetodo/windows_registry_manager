@@ -5,6 +5,7 @@
 //          static_cast<IUnknown*>(*pp);    // make sure everyone derives from IUnknown
 #define CINTERFACE
 #endif
+#include <Winsock2.h>//need to link Ws2_32.lib
 #include "config/suffix.hpp"
 #include <Windows.h>
 #include <string>
@@ -151,3 +152,4 @@ namespace microsoft {
 		};
 	}
 }
+#include "registry_key/registry_key.hpp"

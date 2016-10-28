@@ -3,8 +3,7 @@ Windowsのレジストリを読むプログラムです。
 
 ## ビルド
 
-``windows_registry_manager.sln``を使って``windows_registry_manager``のプロジェクトをバッチビルドしてください
-GCC向けビルドスクリプトはしばらくお待ち下さい。
+ヘッダーオンリーです。
 
 ## 使い方
 

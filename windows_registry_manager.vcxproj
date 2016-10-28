@@ -35,9 +35,6 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\registry_key.cpp" />
-  </ItemGroup>
-  <ItemGroup>
     <ClInclude Include="include\win32_reg\config\compiler.hpp" />
     <ClInclude Include="include\win32_reg\config\compiler\clang.hpp" />
     <ClInclude Include="include\win32_reg\config\compiler\common_edg.hpp" />
@@ -48,6 +45,7 @@
     <ClInclude Include="include\win32_reg\config\no_min_max.h" />
     <ClInclude Include="include\win32_reg\config\suffix.hpp" />
     <ClInclude Include="include\win32_reg\registry_key.hpp" />
+    <ClInclude Include="include\win32_reg\registry_key\registry_key.hpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{34741FA8-B2C9-489D-8A9B-3413E6671E84}</ProjectGuid>
