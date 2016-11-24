@@ -297,6 +297,11 @@ Network Trash Folder
 Temporary Items
 .apdisk
 
+# Embarcadero® C++Builder 10.1 Berlin
+*.cbproj.local
+*.res
+*.stat
+
 #other
 *.diagsession
 *cd
