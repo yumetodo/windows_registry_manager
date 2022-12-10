@@ -5,7 +5,6 @@
 #endif
 #include "../registry_key.hpp"
 #include <cstring>
-#include <codecvt>
 namespace microsoft {
 	namespace win32 {
 		using std::system_category;
