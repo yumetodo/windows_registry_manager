@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 14
-VisualStudioVersion = 14.0.25420.1
+# Visual Studio Version 17
+VisualStudioVersion = 17.4.33110.190
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "sample", "sample\sample.vcxproj", "{A7E7E8D6-B891-4BA0-B997-8871C3FBF551}"
 EndProject
@@ -9,24 +9,12 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "windows_registry_manager", 
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
-		clang_Debug|x64 = clang_Debug|x64
-		clang_Debug|x86 = clang_Debug|x86
-		clang_Release|x64 = clang_Release|x64
-		clang_Release|x86 = clang_Release|x86
 		Debug|x64 = Debug|x64
 		Debug|x86 = Debug|x86
 		Release|x64 = Release|x64
 		Release|x86 = Release|x86
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{A7E7E8D6-B891-4BA0-B997-8871C3FBF551}.clang_Debug|x64.ActiveCfg = Debug|x64
-		{A7E7E8D6-B891-4BA0-B997-8871C3FBF551}.clang_Debug|x64.Build.0 = Debug|x64
-		{A7E7E8D6-B891-4BA0-B997-8871C3FBF551}.clang_Debug|x86.ActiveCfg = Debug|Win32
-		{A7E7E8D6-B891-4BA0-B997-8871C3FBF551}.clang_Debug|x86.Build.0 = Debug|Win32
-		{A7E7E8D6-B891-4BA0-B997-8871C3FBF551}.clang_Release|x64.ActiveCfg = Release|x64
-		{A7E7E8D6-B891-4BA0-B997-8871C3FBF551}.clang_Release|x64.Build.0 = Release|x64
-		{A7E7E8D6-B891-4BA0-B997-8871C3FBF551}.clang_Release|x86.ActiveCfg = Release|Win32
-		{A7E7E8D6-B891-4BA0-B997-8871C3FBF551}.clang_Release|x86.Build.0 = Release|Win32
 		{A7E7E8D6-B891-4BA0-B997-8871C3FBF551}.Debug|x64.ActiveCfg = Debug|x64
 		{A7E7E8D6-B891-4BA0-B997-8871C3FBF551}.Debug|x64.Build.0 = Debug|x64
 		{A7E7E8D6-B891-4BA0-B997-8871C3FBF551}.Debug|x86.ActiveCfg = Debug|Win32
@@ -35,14 +23,6 @@ Global
 		{A7E7E8D6-B891-4BA0-B997-8871C3FBF551}.Release|x64.Build.0 = Release|x64
 		{A7E7E8D6-B891-4BA0-B997-8871C3FBF551}.Release|x86.ActiveCfg = Release|Win32
 		{A7E7E8D6-B891-4BA0-B997-8871C3FBF551}.Release|x86.Build.0 = Release|Win32
-		{34741FA8-B2C9-489D-8A9B-3413E6671E84}.clang_Debug|x64.ActiveCfg = clang_Debug|x64
-		{34741FA8-B2C9-489D-8A9B-3413E6671E84}.clang_Debug|x64.Build.0 = clang_Debug|x64
-		{34741FA8-B2C9-489D-8A9B-3413E6671E84}.clang_Debug|x86.ActiveCfg = clang_Debug|Win32
-		{34741FA8-B2C9-489D-8A9B-3413E6671E84}.clang_Debug|x86.Build.0 = clang_Debug|Win32
-		{34741FA8-B2C9-489D-8A9B-3413E6671E84}.clang_Release|x64.ActiveCfg = clang_Release|x64
-		{34741FA8-B2C9-489D-8A9B-3413E6671E84}.clang_Release|x64.Build.0 = clang_Release|x64
-		{34741FA8-B2C9-489D-8A9B-3413E6671E84}.clang_Release|x86.ActiveCfg = clang_Release|Win32
-		{34741FA8-B2C9-489D-8A9B-3413E6671E84}.clang_Release|x86.Build.0 = clang_Release|Win32
 		{34741FA8-B2C9-489D-8A9B-3413E6671E84}.Debug|x64.ActiveCfg = Debug|x64
 		{34741FA8-B2C9-489D-8A9B-3413E6671E84}.Debug|x64.Build.0 = Debug|x64
 		{34741FA8-B2C9-489D-8A9B-3413E6671E84}.Debug|x86.ActiveCfg = Debug|Win32
@@ -54,5 +34,8 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {2EE48BD4-6AFA-489D-A00B-ADEF934FFB3A}
 	EndGlobalSection
 EndGlobal
