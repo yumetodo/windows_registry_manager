@@ -12,7 +12,6 @@
 #include <array>
 namespace w_system {
 	namespace security {
-		template<bool con> using concept = typename std::enable_if<con, std::nullptr_t>::type;
 		enum class registry_rights : std::uint32_t {
 			//from C# System.Security.AccessControl.RegistryRights
 			delete_permissions = DELETE,//C# original name is Delete however, we rename this to avoid name conflict with reserved keyword.
@@ -49,7 +48,6 @@ namespace w_system {
 namespace microsoft {
 	namespace win32 {
 		using tstring = std::basic_string<TCHAR>;
-		template<bool con> using concept = typename std::enable_if<con, std::nullptr_t>::type;
 		enum class registry_hive : ULONG_PTR {
 #if (WINVER >= 0x0400)
 			current_config = 0x80000005,//HKEY_CURRENT_CONFIG,
@@ -85,6 +83,10 @@ namespace microsoft {
 		};
 		static_assert(registry_value_kind::dword == registry_value_kind::dword_little_endian, "DWord is big endian.");
 		static_assert(registry_value_kind::qword == registry_value_kind::qword_little_endian, "QWord endian is unknown.");
+		template<registry_value_kind type>
+		concept string_like = (type == registry_value_kind::expand_string || type == registry_value_kind::string || type == registry_value_kind::link);
+		template<registry_value_kind type>
+		concept dword_like = (type == registry_value_kind::dword_little_endian || type == registry_value_kind::dword_big_endian);
 		class registry_key {
 		private:
 			HKEY key;
@@ -114,28 +116,24 @@ namespace microsoft {
 			bool is_open() const noexcept;
 			registry_value_kind get_value_kind(const TCHAR* key_name) const;
 
-			template<registry_value_kind type, concept<
-				type == registry_value_kind::expand_string || type == registry_value_kind::string || type == registry_value_kind::link
-			> = nullptr>
-				tstring get_value(const TCHAR* key_name) {
+			//type == registry_value_kind::expand_string || type == registry_value_kind::string || type == registry_value_kind::link
+			template<registry_value_kind type> requires string_like<type>
+			tstring get_value(const TCHAR* key_name) {
 				return get_value_as_string(static_cast<DWORD>(type), key_name);
 			}
-			template<
-				registry_value_kind type,
-				concept<type == registry_value_kind::dword_little_endian || type == registry_value_kind::dword_big_endian> = nullptr
-			>
-				std::uint32_t get_value(const TCHAR* key_name) {
+			template<registry_value_kind type> requires dword_like<type>
+			std::uint32_t get_value(const TCHAR* key_name) {
 				return get_value_as_dword(static_cast<DWORD>(type), key_name);
 			}
-			template<registry_value_kind type, concept<type == registry_value_kind::qword> = nullptr>
+			template<registry_value_kind type> requires (type == registry_value_kind::qword)
 			std::uint64_t get_value(const TCHAR* key_name) {
 				return get_value_as_qword(key_name);
 			}
-			template<registry_value_kind type, concept<type == registry_value_kind::multi_string> = nullptr>
+			template<registry_value_kind type> requires (type == registry_value_kind::multi_string)
 			std::vector<tstring> get_value(const TCHAR* key_name) {
 				return get_value_as_string_arr(key_name);
 			}
-			template<registry_value_kind type, concept<type == registry_value_kind::binary> = nullptr>
+			template<registry_value_kind type> requires (type == registry_value_kind::binary)
 			std::vector<std::uint8_t> get_value(const TCHAR* key_name) {
 				return get_value_as_binary(key_name);
 			}
