@@ -8,74 +8,8 @@
 #include <codecvt>
 namespace microsoft {
 	namespace win32 {
-#if defined(_MSC_VER) && _MSC_VER < 1900
-		std::string format_message(DWORD lasterr) {
-			char* buf = nullptr;
-			const DWORD len = FormatMessageA(
-				FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_ARGUMENT_ARRAY,
-				nullptr,
-				lasterr,
-				LANG_NEUTRAL,
-				(LPSTR)&buf,
-				0,
-				nullptr
-			);
-			DWORD i = (len < 3) ? 0 : len - 3;
-			for (; '\r' != buf[i] && '\n' != buf[i] && '\0' != buf[i]; i++);//改行文字削除
-			buf[i] = '\0';
-			std::string ret;
-			try{
-				ret = buf;//エラーメッセージをコピー
-			}
-			catch(...){//ここで例外を投げるよりはエラーメッセージなしのほうが良いので握りつぶす
-			}
-			LocalFree(buf);//FormatMessageAでFORMAT_MESSAGE_ALLOCATE_BUFFERを指定したので必ず開放
-			return ret;
-		}
-		using std::error_category;
-		class system_error_category_c : public error_category {	// categorize an operating system error
-		public:
-			system_error_category_c() : error_category() {}
-			virtual const char *name() const { return "system"; }
-			virtual std::string message(int ec) const
-			{
-				try {
-					return format_message(ec);
-				}
-				catch (...) {
-					return "unknown error";
-				}
-			}
-		};
-		namespace detail {
-			template<typename T> T& put_on_static_storage() {
-				static T storage;
-				return storage;
-			}
-		}
-		error_category& system_category() {
-			return detail::put_on_static_storage<system_error_category_c>();
-		}
-		using std::runtime_error;
-		class system_error : public runtime_error
-		{
-		public:
-			system_error(std::error_code ec, const std::string& m)
-				: ec_(ec), runtime_error((m.empty()) ? ec.message() : m + ": " + ec.message())
-			{}
-			system_error(std::error_code ec) : system_error(ec, "") {}
-			system_error(std::error_code ec, const char *m) : system_error(ec, std::string(m)) {}
-			system_error(int e, const error_category& erct) : system_error(e, erct, "") {}
-			system_error(int e, const error_category& erct, const std::string& m) : system_error(std::error_code(e, erct), m) {}
-			system_error(int e, const error_category& erct, const char *m) : system_error(e, erct, std::string(m)) {}
-			const std::error_code& code() const { return ec_; }
-		private:
-			std::error_code ec_;
-		};
-#else
 		using std::system_category;
 		using std::system_error;
-#endif
 		registry_key::registry_key(registry_hive parent_key_handle, const TCHAR * sub_key_root, w_system::security::registry_rights rights, registry_view view)
 			: registry_key(reinterpret_cast<HKEY>(parent_key_handle), sub_key_root, rights, view)
 		{}
@@ -90,7 +24,7 @@ namespace microsoft {
 			this->open(parent_key_handle, sub_key_root, rights, view);
 		}
 
-		registry_key::~registry_key() WIN32_REG_NOEXCEPT_OR_NOTHROW {
+		registry_key::~registry_key() noexcept {
 			this->close();
 		}
 
@@ -121,7 +55,7 @@ namespace microsoft {
 			this->open(reinterpret_cast<HKEY>(parent_key_handle.key), sub_key_root, rights, view);
 		}
 
-		void registry_key::close() WIN32_REG_NOEXCEPT_OR_NOTHROW
+		void registry_key::close() noexcept
 		{
 			if (is_open_) {
 				RegCloseKey(this->key);
@@ -129,7 +63,7 @@ namespace microsoft {
 			}
 		}
 
-		bool registry_key::is_open() const WIN32_REG_NOEXCEPT_OR_NOTHROW { return this->is_open_; }
+		bool registry_key::is_open() const noexcept { return this->is_open_; }
 
 		std::pair<registry_value_kind, DWORD> registry_key::get_value_kind_and_size(const TCHAR * key_name) const
 		{
@@ -154,7 +88,7 @@ namespace microsoft {
 			enum class info_type { sub_key, key_value };
 			template<info_type i> struct reg_key_info { DWORD num; DWORD max_len; };
 			template<info_type i>
-			WIN32_REG_CONSTEXPR bool operator!=(const reg_key_info<i>& l, const reg_key_info<i>& r) { return l.max_len != r.max_len || r.num != l.num; }
+			constexpr bool operator!=(const reg_key_info<i>& l, const reg_key_info<i>& r) { return l.max_len != r.max_len || r.num != l.num; }
 			template<info_type i> LONG reg_query_info_key(HKEY key, reg_key_info<i>& sub_key);
 			template<> LONG reg_query_info_key<info_type::key_value>(HKEY key, reg_key_info<info_type::key_value>& info) {
 				return RegQueryInfoKey(

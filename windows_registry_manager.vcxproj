@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -19,15 +19,8 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="include\win32_reg\config\compiler.hpp" />
-    <ClInclude Include="include\win32_reg\config\compiler\clang.hpp" />
-    <ClInclude Include="include\win32_reg\config\compiler\common_edg.hpp" />
-    <ClInclude Include="include\win32_reg\config\compiler\gcc.hpp" />
-    <ClInclude Include="include\win32_reg\config\compiler\intel.hpp" />
-    <ClInclude Include="include\win32_reg\config\compiler\visualc.hpp" />
     <ClInclude Include="include\win32_reg\config\LINK.h" />
     <ClInclude Include="include\win32_reg\config\no_min_max.h" />
-    <ClInclude Include="include\win32_reg\config\suffix.hpp" />
     <ClInclude Include="include\win32_reg\registry_key.hpp" />
     <ClInclude Include="include\win32_reg\registry_key\registry_key.hpp" />
   </ItemGroup>
