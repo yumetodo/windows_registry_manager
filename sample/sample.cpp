@@ -1,5 +1,6 @@
 ﻿#include "win32_reg/registry_key.hpp"
 #include <iostream>
+#include <iomanip>
 #include <locale>
 #include <tchar.h>
 #include <memory>
@@ -88,6 +89,39 @@ BOOL is_dot_net4()
 	}
 	return 1 == reg.get_value<registry_value_kind::dword>(_T("Install"));
 }
+
+using tostream = std::basic_ostream<TCHAR, std::char_traits<TCHAR>>;
+struct as_hex { int width; };
+tostream& operator<< (tostream& os, as_hex h)
+{
+	os << std::hex << std::setfill(_T('0')) << std::setw(h.width);
+	return os;
+}
+struct menu_font {};
+tostream& operator<< (tostream& os, menu_font)
+{
+	try {
+		registry_key reg(
+			microsoft::win32::registry_hive::current_user,
+			_T(R"(Control Panel\Desktop\WindowMetrics)"),
+			w_system::security::registry_rights::read_key
+		);
+		const auto bin = reg.get_value<registry_value_kind::binary>(_T("MenuFont"));
+		if (bin.empty()) return os;
+		os << _T("addr  00  01  02  03  04  05  06  07  08  09  0A  0B  0C  0D  0E  0F\n---") << std::endl;
+		for (std::size_t i = 0; i < bin.size(); ++i) {
+			if (i % 0x10 == 0) {
+				if (i) os << std::endl;
+				os << as_hex(4) << i;
+			}
+			os << _T("  ") << as_hex(2) << bin[i];
+		}
+		os << std::endl;
+	}
+	catch (const std::exception&) {
+	}
+	return os;
+}
 #ifdef UNICODE
 #define tcout std::wcout
 #else
@@ -117,7 +151,8 @@ int main() {
 			<< std::endl
 			<< _T("ie version:") << get_ie_version() << std::endl
 			<< _T("is_dot_net2:") << is_dot_net2() << std::endl
-			<< _T("is_dot_net4:") << is_dot_net4() << std::endl;
+			<< _T("is_dot_net4:") << is_dot_net4() << std::endl
+			<< _T("menu font:\n") << menu_font{} << std::endl;
 		return 0;
 	}
 	catch (std::exception &er) {
