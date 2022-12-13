@@ -100,7 +100,7 @@ namespace microsoft {
 			void check_open() const;
 			std::pair<registry_value_kind, DWORD> get_value_kind_and_size(const TCHAR* key_name) const;
 		public:
-			registry_key() = default;
+			registry_key() noexcept;
 			registry_key(registry_hive parent_key_handle, const TCHAR* sub_key_root, w_system::security::registry_rights rights, registry_view view = registry_view::v_default);
 			registry_key(HKEY parent_key_handle, const TCHAR* sub_key_root, w_system::security::registry_rights rights, registry_view view = registry_view::v_default);
 			registry_key(const registry_key& parent_key_handle, const TCHAR* sub_key_root, w_system::security::registry_rights rights, registry_view view = registry_view::v_default);
