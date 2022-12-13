@@ -115,6 +115,7 @@ namespace microsoft {
 					case ERROR_SUCCESS:
 						buf.resize(len);
 						buf.shrink_to_fit();
+						[[fallthrough]];
 					case ERROR_MORE_DATA:
 					case ERROR_NO_MORE_ITEMS:
 						return er;
