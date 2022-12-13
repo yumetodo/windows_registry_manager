@@ -9,6 +9,7 @@ namespace microsoft {
 	namespace win32 {
 		using std::system_category;
 		using std::system_error;
+		registry_key::registry_key() noexcept : key(), parent_key_handle_(), is_open_(false) {}
 		registry_key::registry_key(registry_hive parent_key_handle, const TCHAR * sub_key_root, w_system::security::registry_rights rights, registry_view view)
 			: registry_key(reinterpret_cast<HKEY>(parent_key_handle), sub_key_root, rights, view)
 		{}
